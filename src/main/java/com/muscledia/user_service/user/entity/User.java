@@ -1,5 +1,6 @@
 package com.muscledia.user_service.user.entity;
 
+import com.muscledia.user_service.avatar.entity.Avatar;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -42,6 +43,9 @@ public class User {
     @Enumerated(EnumType.STRING)
     @Column(name = "goal_type")
     private GoalType goalType;
+
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private Avatar avatar;
 
     @Column(name = "current_streak", columnDefinition = "INT DEFAULT 0")
     private Integer currentStreak;
