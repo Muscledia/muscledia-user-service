@@ -5,9 +5,10 @@ import com.muscledia.user_service.user.entity.UserChampion;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface UserChampionRepository extends JpaRepository<UserChampion, Long> {
-    List<UserChampion> findByUser(User user);
+    Optional<UserChampion> findByUserIdAndChampionId(Long userId, Long championId);
 
-    boolean existsByUser(User user);
+    List<UserChampion> findByUserId(Long userId);
 }
