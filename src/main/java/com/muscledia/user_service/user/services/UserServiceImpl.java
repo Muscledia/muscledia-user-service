@@ -5,6 +5,7 @@ import com.muscledia.user_service.user.repo.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 
@@ -41,9 +42,16 @@ public class UserServiceImpl implements IUserService {
     }
 
     @Override
+    @Transactional
     public User saveUser(User user) {
         // Assuming the User object passed has a raw password
         user.setPasswordHash(passwordEncoder.encode(user.getPasswordHash()));
         return userRepository.save(user);
+    }
+
+    @Override
+    @Transactional
+    public void deleteUser(Long userId) {
+        userRepository.deleteById(userId);
     }
 }

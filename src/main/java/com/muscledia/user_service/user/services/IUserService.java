@@ -16,4 +16,6 @@ public interface IUserService {
     boolean existsByEmail(String email);
 
     User saveUser(User user);
+
+    void deleteUser(Long userId);
 }
