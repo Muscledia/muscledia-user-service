@@ -2,16 +2,18 @@ package com.muscledia.user_service.avatar.repo;
 
 import com.muscledia.user_service.avatar.entity.Avatar;
 import com.muscledia.user_service.avatar.entity.AvatarType;
-import com.muscledia.user_service.user.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
+@Repository
 public interface AvatarRepository extends JpaRepository<Avatar, Long> {
-    Optional<Avatar> findByUser(User user);
+    List<Avatar> findByUser_UserId(Long userId);
 
-    boolean existsByUser(User user);
+    Optional<Avatar> findByUser_UserIdAndAvatarId(Long userId, Long avatarId);
 
-    Optional<Avatar> findByAvatarType(AvatarType avatarType);
+    Optional<Avatar> findByUser_UserIdAndAvatarType(Long userId, AvatarType avatarType);
 
 }
