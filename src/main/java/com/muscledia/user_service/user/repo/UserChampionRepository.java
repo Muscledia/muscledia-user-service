@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Optional;
 
 public interface UserChampionRepository extends JpaRepository<UserChampion, Long> {
-    Optional<UserChampion> findByUserIdAndChampionId(Long userId, Long championId);
+    Optional<UserChampion> findByUser_UserIdAndChampionId(Long userId, Long championId);
 
-    List<UserChampion> findByUserId(Long userId);
+    List<UserChampion> findByUser_UserId(Long userId);
 }
