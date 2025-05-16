@@ -8,8 +8,8 @@ import java.util.List;
 import java.util.Optional;
 
 public interface UserBadgeRepository extends JpaRepository<UserBadge, Long> {
-    List<UserBadge> findByUserId(Long userId);
+    List<UserBadge> findByUser_UserId(Long userId);
 
-    Optional<UserBadge> findByUserIdAndBadgeId(Long userId, Long badgeId);
+    Optional<UserBadge> findByUser_UserIdAndBadgeId(Long userId, Long badgeId);
 
 }
