@@ -25,12 +25,12 @@ public class UserBadgeServiceImpl implements IUserBadgeService {
 
     @Override
     public Optional<UserBadge> getUserBadge(Long userId, Long badgeId) {
-        return userBadgeRepository.findByUserIdAndBadgeId(userId, badgeId);
+        return userBadgeRepository.findByUser_UserIdAndBadgeId(userId, badgeId);
     }
 
     @Override
     public List<UserBadge> getUserBadgesByUserId(Long userId) {
-        return userBadgeRepository.findByUserId(userId);
+        return userBadgeRepository.findByUser_UserId(userId);
     }
 
     @Override
