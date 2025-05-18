@@ -26,12 +26,12 @@ public class UserChampionServiceImpl implements IUserChampionService {
 
     @Override
     public Optional<UserChampion> getUserChampion(Long userId, Long championId) {
-        return userChampionRepository.findByUserIdAndChampionId(userId, championId);
+        return userChampionRepository.findByUser_UserIdAndChampionId(userId, championId);
     }
 
     @Override
     public List<UserChampion> getUserChampionsByUserId(Long userId) {
-        return userChampionRepository.findByUserId(userId);
+        return userChampionRepository.findByUser_UserId(userId);
     }
 
     @Override
@@ -53,6 +53,8 @@ public class UserChampionServiceImpl implements IUserChampionService {
         userChampionRepository.save(userChampion);
     }
 
+    @Override
+    @Transactional
     public UserChampion startBattle(Long userId, Long championId) {
         User user = userService.getUserById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));

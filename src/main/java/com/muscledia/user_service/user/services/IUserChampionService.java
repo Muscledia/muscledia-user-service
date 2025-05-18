@@ -17,4 +17,6 @@ public interface IUserChampionService {
     void updateExerciseCount(Long userId, Long championId, int count);
 
     void markChampionDefeated(Long userId, Long championId);
+
+    UserChampion startBattle(Long userId, Long championId);
 }
