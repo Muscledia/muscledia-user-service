@@ -4,6 +4,7 @@ import com.muscledia.user_service.user.dto.DefeatChampionRequest;
 import com.muscledia.user_service.user.dto.StartBattleRequest;
 import com.muscledia.user_service.user.dto.UpdateExerciseCountRequest;
 import com.muscledia.user_service.user.entity.UserChampion;
+import com.muscledia.user_service.user.exception.ResourceNotFoundException;
 import com.muscledia.user_service.user.services.IUserChampionService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -12,7 +13,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/user-champions")
@@ -25,20 +25,22 @@ public class UserChampionController {
 
     @GetMapping("users/{userId}")
     public ResponseEntity<List<UserChampion>> getUserChampions(@PathVariable Long userId) {
-        return ResponseEntity.ok(userChampionService.getUserChampionsByUserId(userId));
+        List<UserChampion> champions = userChampionService.getUserChampionsByUserId(userId);
+        return ResponseEntity.ok(champions);
     }
 
     @GetMapping("users/{userId}/{championId}")
-    public ResponseEntity<Optional<UserChampion>> getUserChampion(@PathVariable Long userId, @PathVariable Long championId) {
-        return ResponseEntity.ok(userChampionService.getUserChampion(userId, championId));
+    public ResponseEntity<UserChampion> getUserChampion(@PathVariable Long userId, @PathVariable Long championId) {
+        return ResponseEntity.ok(userChampionService.getUserChampion(userId, championId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        String.format("Champion %d not found for user %d", championId, userId))));
     }
 
     @PostMapping("/start")
     public ResponseEntity<UserChampion> startBattle(@Valid @RequestBody StartBattleRequest startBattleRequest) {
         UserChampion startedBattle = userChampionService.startBattle(
                 startBattleRequest.getUserId(),
-                startBattleRequest.getChampionId()
-        );
+                startBattleRequest.getChampionId());
         return ResponseEntity.status(HttpStatus.CREATED).body(startedBattle);
     }
 
@@ -47,8 +49,7 @@ public class UserChampionController {
         userChampionService.updateExerciseCount(
                 updateRequest.getUserId(),
                 updateRequest.getChampionId(),
-                updateRequest.getCount()
-        );
+                updateRequest.getCount());
         return ResponseEntity.noContent().build();
     }
 
@@ -56,9 +57,7 @@ public class UserChampionController {
     public ResponseEntity<Void> markChampionDefeated(@Valid @RequestBody DefeatChampionRequest defeatRequest) {
         userChampionService.markChampionDefeated(
                 defeatRequest.getUserId(),
-                defeatRequest.getChampionId()
-        );
+                defeatRequest.getChampionId());
         return ResponseEntity.noContent().build();
     }
-
 }
