@@ -2,6 +2,8 @@ package com.muscledia.user_service.user.services;
 
 import com.muscledia.user_service.user.entity.User;
 import com.muscledia.user_service.user.entity.UserBadge;
+import com.muscledia.user_service.user.exception.BadgeAlreadyAwardedException;
+import com.muscledia.user_service.user.exception.ResourceNotFoundException;
 import com.muscledia.user_service.user.repo.UserBadgeRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -15,7 +17,7 @@ import java.util.Optional;
 public class UserBadgeServiceImpl implements IUserBadgeService {
 
     private final UserBadgeRepository userBadgeRepository;
-    private final IUserService userService; // Inject UserService
+    private final IUserService userService;
 
     @Override
     @Transactional
@@ -30,6 +32,9 @@ public class UserBadgeServiceImpl implements IUserBadgeService {
 
     @Override
     public List<UserBadge> getUserBadgesByUserId(Long userId) {
+        // Verify user exists
+        userService.getUserById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
         return userBadgeRepository.findByUser_UserId(userId);
     }
 
@@ -37,7 +42,8 @@ public class UserBadgeServiceImpl implements IUserBadgeService {
     @Transactional
     public void updateProgress(Long userId, Long badgeId, int progress) {
         UserBadge userBadge = getUserBadge(userId, badgeId)
-                .orElseThrow(() -> new RuntimeException("UserBadge not found")); // Handle not found
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        String.format("Badge %d not found for user %d", badgeId, userId)));
         userBadge.setProgress(progress);
         userBadgeRepository.save(userBadge);
     }
@@ -45,17 +51,18 @@ public class UserBadgeServiceImpl implements IUserBadgeService {
     @Override
     @Transactional
     public void awardBadge(Long userId, Long badgeId) {
-        Optional<UserBadge> existingBadge = getUserBadge(userId, badgeId);
-        if (existingBadge.isPresent()) {
-            return; // Or throw an exception:  throw new IllegalStateException("Badge already awarded");
+        // Check if badge is already awarded
+        if (getUserBadge(userId, badgeId).isPresent()) {
+            throw new BadgeAlreadyAwardedException(
+                    String.format("Badge %d is already awarded to user %d", badgeId, userId));
         }
 
         User user = userService.getUserById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found")); // Handle not found
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
 
         UserBadge newUserBadge = new UserBadge();
         newUserBadge.setUser(user);
-        newUserBadge.setBadgeId(badgeId); //  Set the badgeId
+        newUserBadge.setBadgeId(badgeId);
         saveUserBadge(newUserBadge);
     }
 }
