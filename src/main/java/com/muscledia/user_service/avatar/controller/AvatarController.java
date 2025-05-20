@@ -7,17 +7,20 @@ import com.muscledia.user_service.avatar.dto.UpdateAvatarLevelRequest;
 import com.muscledia.user_service.avatar.entity.Avatar;
 import com.muscledia.user_service.avatar.entity.AvatarType;
 import com.muscledia.user_service.avatar.service.IAvatarService;
+import com.muscledia.user_service.user.exception.ResourceNotFoundException;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/api")
+@Validated
 public class AvatarController {
     private final IAvatarService avatarService;
 
@@ -28,15 +31,16 @@ public class AvatarController {
     @PostMapping("/users/{userId}/avatars")
     public ResponseEntity<Avatar> createAvatar(
             @PathVariable Long userId,
-            @RequestParam AvatarType avatarType) {
+            @NotNull(message = "Avatar type is required") @RequestParam AvatarType avatarType) {
         Avatar newAvatar = avatarService.createAvatar(userId, avatarType);
         return ResponseEntity.status(HttpStatus.CREATED).body(newAvatar);
     }
 
-    @GetMapping("/users/{userId}/avatar")
-    public ResponseEntity<Optional<Avatar>> getPrimaryAvatar(@PathVariable Long userId) {
-        Optional<Avatar> avatar = avatarService.getAvatarByUserId(userId);
-        return ResponseEntity.ok(avatar); // Returns 200 even if empty.  Use .orElse(ResponseEntity.notFound().build()) for a 404 if desired
+    @GetMapping("/users/{userId}/avatar") 
+                                          // 
+    public ResponseEntity<Avatar> getPrimaryAvatar(@PathVariable Long userId) {
+        return ResponseEntity.ok(avatarService.getAvatarByUserId(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("No avatar found for user: " + userId)));
     }
 
     @GetMapping("/users/{userId}/avatars")
@@ -47,9 +51,8 @@ public class AvatarController {
 
     @GetMapping("/avatars/{avatarId}")
     public ResponseEntity<Avatar> getAvatarById(@PathVariable Long avatarId) {
-        Optional<Avatar> avatar = avatarService.getAvatarById(avatarId);
-        return avatar.map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+        return ResponseEntity.ok(avatarService.getAvatarById(avatarId)
+                .orElseThrow(() -> new ResourceNotFoundException("Avatar not found with id: " + avatarId)));
     }
 
     @PatchMapping("/avatars/{avatarId}/level")
@@ -71,8 +74,13 @@ public class AvatarController {
     @PatchMapping("/avatars/{avatarId}/ability")
     public ResponseEntity<Avatar> unlockAvatarAbility(
             @PathVariable Long avatarId,
+                
             @Valid @RequestBody UnlockAbilityRequest unlockRequest) {
-        Avatar updatedAvatar = avatarService.unlockAbility(avatarId, unlockRequest.getAbilityKey(), unlockRequest.getAbilityValue());
+        Avatar updatedAvatar = avatarService.unlockAbility(
+                avatarId, 
+                unlockRequest.getAbilityKey(), 
+                unlockRequest.getAbilityValue()
+        );
         return ResponseEntity.ok(updatedAvatar);
     }
 
