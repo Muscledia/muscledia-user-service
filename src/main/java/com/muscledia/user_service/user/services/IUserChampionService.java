@@ -1,6 +1,5 @@
 package com.muscledia.user_service.user.services;
 
-import com.muscledia.user_service.user.entity.User;
 import com.muscledia.user_service.user.entity.UserChampion;
 
 import java.util.List;
