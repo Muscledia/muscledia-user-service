@@ -2,8 +2,8 @@ package com.muscledia.user_service.user.services;
 
 import com.muscledia.user_service.user.entity.User;
 import com.muscledia.user_service.user.entity.UserBadge;
-import com.muscledia.user_service.user.exception.BadgeAlreadyAwardedException;
-import com.muscledia.user_service.user.exception.ResourceNotFoundException;
+import com.muscledia.user_service.exception.BadgeAlreadyAwardedException;
+import com.muscledia.user_service.exception.ResourceNotFoundException;
 import com.muscledia.user_service.user.repo.UserBadgeRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

@@ -1,7 +1,7 @@
 package com.muscledia.user_service.user.controllers;
 
 import com.muscledia.user_service.user.entity.UserBadge;
-import com.muscledia.user_service.user.exception.ResourceNotFoundException;
+import com.muscledia.user_service.exception.ResourceNotFoundException;
 import com.muscledia.user_service.user.services.IUserBadgeService;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;

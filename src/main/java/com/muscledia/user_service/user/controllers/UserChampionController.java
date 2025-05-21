@@ -4,7 +4,7 @@ import com.muscledia.user_service.user.dto.DefeatChampionRequest;
 import com.muscledia.user_service.user.dto.StartBattleRequest;
 import com.muscledia.user_service.user.dto.UpdateExerciseCountRequest;
 import com.muscledia.user_service.user.entity.UserChampion;
-import com.muscledia.user_service.user.exception.ResourceNotFoundException;
+import com.muscledia.user_service.exception.ResourceNotFoundException;
 import com.muscledia.user_service.user.services.IUserChampionService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Qualifier;

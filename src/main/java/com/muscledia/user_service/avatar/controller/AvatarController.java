@@ -7,7 +7,7 @@ import com.muscledia.user_service.avatar.dto.UpdateAvatarLevelRequest;
 import com.muscledia.user_service.avatar.entity.Avatar;
 import com.muscledia.user_service.avatar.entity.AvatarType;
 import com.muscledia.user_service.avatar.service.IAvatarService;
-import com.muscledia.user_service.user.exception.ResourceNotFoundException;
+import com.muscledia.user_service.exception.ResourceNotFoundException;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import org.springframework.beans.factory.annotation.Qualifier;
