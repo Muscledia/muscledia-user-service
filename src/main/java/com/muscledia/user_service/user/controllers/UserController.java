@@ -91,7 +91,8 @@ public class UserController {
         if (updateRequest.getInitialAvatarType() != null) {
             Avatar avatar = new Avatar();
             avatar.setAvatarType(updateRequest.getInitialAvatarType());
-            existingUser.setAvatar(avatar);
+            avatar.setUser(existingUser); // Set the user reference in Avatar
+            existingUser.setAvatar(avatar); // Set the avatar reference in User
         }
     }
 }
