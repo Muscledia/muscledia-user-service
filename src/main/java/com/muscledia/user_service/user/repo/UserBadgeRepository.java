@@ -1,6 +1,5 @@
 package com.muscledia.user_service.user.repo;
 
-import com.muscledia.user_service.user.entity.User;
 import com.muscledia.user_service.user.entity.UserBadge;
 import org.springframework.data.jpa.repository.JpaRepository;
 
