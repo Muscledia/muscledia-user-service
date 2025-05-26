@@ -1,5 +1,6 @@
 package com.muscledia.user_service.user.entity;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.muscledia.user_service.avatar.entity.Avatar;
 import jakarta.persistence.*;
 import lombok.*;
@@ -46,6 +47,7 @@ public class User {
     @Column(name = "goal_type")
     private GoalType goalType;
 
+    @JsonManagedReference
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Avatar avatar;
 
@@ -54,7 +56,6 @@ public class User {
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<UserBadge> userBadges = new ArrayList<>();
-
 
     @Column(name = "current_streak", columnDefinition = "INT DEFAULT 0")
     private Integer currentStreak;
@@ -70,5 +71,4 @@ public class User {
 
     @Column(name = "updated_at", columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP")
     private LocalDateTime updatedAt;
-
 }

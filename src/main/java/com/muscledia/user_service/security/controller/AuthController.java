@@ -5,6 +5,10 @@ import com.muscledia.user_service.security.dto.AuthenticationRequest;
 import com.muscledia.user_service.security.dto.AuthenticationResponse;
 import com.muscledia.user_service.user.entity.User;
 import com.muscledia.user_service.user.services.IUserService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -17,6 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/users")
+@Tag(name = "Authentication", description = "Authentication management APIs")
 public class AuthController {
 
     private final AuthenticationManager authenticationManager;
@@ -31,6 +36,12 @@ public class AuthController {
         this.userService = userService;
     }
 
+    @Operation(summary = "Authenticate user", description = "Authenticates a user with username and password and returns a JWT token")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successfully authenticated"),
+            @ApiResponse(responseCode = "401", description = "Invalid credentials"),
+            @ApiResponse(responseCode = "400", description = "Invalid request")
+    })
     @PostMapping("/login")
     public ResponseEntity<AuthenticationResponse> login(@Valid @RequestBody AuthenticationRequest request) {
         Authentication authentication = authenticationManager.authenticate(

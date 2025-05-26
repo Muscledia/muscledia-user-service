@@ -1,5 +1,6 @@
 package com.muscledia.user_service.avatar.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.muscledia.user_service.user.entity.User;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -24,6 +25,7 @@ public class Avatar {
     @Column(name = "avatar_id")
     private Long avatarId;
 
+    @JsonBackReference
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false, unique = true)
     private User user;
@@ -50,6 +52,5 @@ public class Avatar {
 
     @Column(name = "updated_at", columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP")
     private LocalDateTime updatedAt = LocalDateTime.now();
-
 
 }
