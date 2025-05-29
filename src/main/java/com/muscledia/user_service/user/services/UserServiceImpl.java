@@ -1,5 +1,7 @@
 package com.muscledia.user_service.user.services;
 
+import com.muscledia.user_service.exception.ResourceNotFoundException;
+import com.muscledia.user_service.user.entity.ERole;
 import com.muscledia.user_service.user.entity.User;
 import com.muscledia.user_service.user.repo.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -11,10 +13,22 @@ import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
-
 public class UserServiceImpl implements IUserService {
     private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder; // Inject PasswordEncoder
+    private final PasswordEncoder passwordEncoder;
+    private final RoleService roleService;
+
+    @Override
+    @Transactional
+    public User saveUser(User user) {
+        // Encode password if it's a new user
+        if (user.getUserId() == null) {
+            user.setPasswordHash(passwordEncoder.encode(user.getPasswordHash()));
+            // Assign default ROLE_USER to new users
+            roleService.addRoleToUser(user, ERole.ROLE_USER);
+        }
+        return userRepository.save(user);
+    }
 
     @Override
     public Optional<User> getUserById(Long userId) {
@@ -43,15 +57,23 @@ public class UserServiceImpl implements IUserService {
 
     @Override
     @Transactional
-    public User saveUser(User user) {
-        // Assuming the User object passed has a raw password
-        user.setPasswordHash(passwordEncoder.encode(user.getPasswordHash()));
+    public void deleteUser(Long userId) {
+        userRepository.deleteById(userId);
+    }
+
+    @Transactional
+    public User promoteToAdmin(Long userId) {
+        User user = getUserById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+        roleService.addRoleToUser(user, ERole.ROLE_ADMIN);
         return userRepository.save(user);
     }
 
-    @Override
     @Transactional
-    public void deleteUser(Long userId) {
-        userRepository.deleteById(userId);
+    public User demoteFromAdmin(Long userId) {
+        User user = getUserById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+        roleService.removeRoleFromUser(user, ERole.ROLE_ADMIN);
+        return userRepository.save(user);
     }
 }
