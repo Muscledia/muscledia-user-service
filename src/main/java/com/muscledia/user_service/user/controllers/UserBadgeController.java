@@ -3,11 +3,12 @@ package com.muscledia.user_service.user.controllers;
 import com.muscledia.user_service.user.entity.UserBadge;
 import com.muscledia.user_service.exception.ResourceNotFoundException;
 import com.muscledia.user_service.user.services.IUserBadgeService;
+import com.muscledia.user_service.security.annotation.IsAdmin;
+import com.muscledia.user_service.security.annotation.IsUser;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
@@ -19,7 +20,6 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/users/{userId}/badges")
 @Tag(name = "User Badges", description = "User badge management APIs")
-@SecurityRequirement(name = "JWT")
 public class UserBadgeController {
         private final IUserBadgeService userBadgeService;
 
@@ -27,20 +27,24 @@ public class UserBadgeController {
                 this.userBadgeService = userBadgeService;
         }
 
-        @Operation(summary = "Get user's badges", description = "Retrieves all badges for a specific user")
+        @IsUser
+        @Operation(summary = "Get user badges", description = "Retrieves all badges for a user")
         @ApiResponses(value = {
-                        @ApiResponse(responseCode = "200", description = "Badges retrieved successfully")
+                        @ApiResponse(responseCode = "200", description = "Badges retrieved successfully"),
+                        @ApiResponse(responseCode = "404", description = "User not found"),
+                        @ApiResponse(responseCode = "403", description = "Forbidden - Requires USER or ADMIN role")
         })
         @GetMapping
         public ResponseEntity<List<UserBadge>> getUserBadges(@PathVariable Long userId) {
-                List<UserBadge> badges = userBadgeService.getUserBadgesByUserId(userId);
-                return ResponseEntity.ok(badges);
+                return ResponseEntity.ok(userBadgeService.getUserBadgesByUserId(userId));
         }
 
-        @Operation(summary = "Get specific user badge", description = "Retrieves a specific badge for a user")
+        @IsUser
+        @Operation(summary = "Get specific badge", description = "Retrieves a specific badge for a user")
         @ApiResponses(value = {
                         @ApiResponse(responseCode = "200", description = "Badge found"),
-                        @ApiResponse(responseCode = "404", description = "Badge not found for user")
+                        @ApiResponse(responseCode = "404", description = "Badge not found"),
+                        @ApiResponse(responseCode = "403", description = "Forbidden - Requires USER or ADMIN role")
         })
         @GetMapping("/{badgeId}")
         public ResponseEntity<UserBadge> getUserBadge(
@@ -51,10 +55,13 @@ public class UserBadgeController {
                                                 String.format("Badge %d not found for user %d", badgeId, userId))));
         }
 
-        @Operation(summary = "Award badge to user", description = "Awards a specific badge to a user")
+        @IsAdmin
+        @Operation(summary = "Award badge", description = "Awards a badge to a user")
         @ApiResponses(value = {
                         @ApiResponse(responseCode = "201", description = "Badge awarded successfully"),
-                        @ApiResponse(responseCode = "404", description = "User or badge not found")
+                        @ApiResponse(responseCode = "404", description = "User not found"),
+                        @ApiResponse(responseCode = "409", description = "Badge already awarded"),
+                        @ApiResponse(responseCode = "403", description = "Forbidden - Requires ADMIN role")
         })
         @PostMapping("/{badgeId}")
         public ResponseEntity<Void> awardBadge(
@@ -64,10 +71,12 @@ public class UserBadgeController {
                 return ResponseEntity.status(HttpStatus.CREATED).build();
         }
 
-        @Operation(summary = "Update badge progress", description = "Updates the progress of a specific badge for a user")
+        @IsAdmin
+        @Operation(summary = "Update badge progress", description = "Updates the progress of a user's badge")
         @ApiResponses(value = {
                         @ApiResponse(responseCode = "204", description = "Progress updated successfully"),
-                        @ApiResponse(responseCode = "404", description = "User badge not found")
+                        @ApiResponse(responseCode = "404", description = "Badge not found"),
+                        @ApiResponse(responseCode = "403", description = "Forbidden - Requires ADMIN role")
         })
         @PatchMapping("/{badgeId}/progress")
         public ResponseEntity<Void> updateBadgeProgress(
@@ -78,10 +87,11 @@ public class UserBadgeController {
                 return ResponseEntity.noContent().build();
         }
 
+        @IsAdmin
         @Operation(summary = "Save user badge", description = "Creates or updates a user badge")
         @ApiResponses(value = {
                         @ApiResponse(responseCode = "201", description = "Badge saved successfully"),
-                        @ApiResponse(responseCode = "400", description = "Invalid badge data")
+                        @ApiResponse(responseCode = "403", description = "Forbidden - Requires ADMIN role")
         })
         @PostMapping
         public ResponseEntity<UserBadge> saveUserBadge(@RequestBody UserBadge userBadge) {
