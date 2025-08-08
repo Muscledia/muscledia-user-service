@@ -40,6 +40,9 @@ public class SecurityConfig {
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
                         // Public endpoints
                         .requestMatchers("/api/users/register", "/api/users/login").permitAll()
+                        // Admin-only endpoints (explicit protection)
+                        .requestMatchers("/api/users/*/promote", "/api/users/*/demote").hasRole("ADMIN")
+                        .requestMatchers("/api/users/admin/**").hasRole("ADMIN")
                         // Protected endpoints
                         .requestMatchers("/api/users/**").authenticated()
                         .requestMatchers("/api/avatars/**").authenticated()
