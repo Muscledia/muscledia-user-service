@@ -2,6 +2,8 @@ package com.muscledia.user_service.user.repo;
 
 import com.muscledia.user_service.user.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.Optional;
 
@@ -13,4 +15,27 @@ public interface UserRepository extends JpaRepository<User, Long> {
     boolean existsByUsername(String username);
 
     boolean existsByEmail(String email);
+
+
+    // New UUID-based methods
+    Optional<User> findByUuidString(String uuidString);
+
+    boolean existsByUuidString(String uuidString);
+
+    void deleteByUuidString(String uuidString);
+
+    // Custom query methods for better performance
+    @Query("SELECT u.userId FROM User u WHERE u.uuidString = :uuidString")
+    Optional<Long> findUserIdByUuidString(@Param("uuidString") String uuidString);
+
+    @Query("SELECT u.uuidString FROM User u WHERE u.userId = :userId")
+    Optional<String> findUuidStringByUserId(@Param("userId") Long userId);
+
+    // Check if either the Long ID or UUID exists (useful for validation)
+    @Query("SELECT CASE WHEN COUNT(u) > 0 THEN true ELSE false END FROM User u WHERE u.userId = :userId OR u.uuidString = :uuidString")
+    boolean existsByUserIdOrUuidString(@Param("userId") Long userId, @Param("uuidString") String uuidString);
+
+    // Find user by either Long ID or UUID string (flexible search)
+    @Query("SELECT u FROM User u WHERE u.userId = :userId OR u.uuidString = :identifier")
+    Optional<User> findByUserIdOrUuidString(@Param("userId") Long userId, @Param("identifier") String identifier);
 }

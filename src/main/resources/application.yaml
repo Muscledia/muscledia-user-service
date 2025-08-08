@@ -17,6 +17,16 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.MySQLDialect
 
+    # Jackson Configuration to handle Long precision issues
+  jackson:
+    generator:
+      write-numbers-as-strings: false # Keep this false to only target specific fields
+    serialization:
+      write-dates-as-timestamps: false
+    deserialization:
+      fail-on-unknown-properties: false
+    default-property-inclusion: NON_NULL
+
 eureka:
   client:
     service-url:
