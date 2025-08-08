@@ -1,6 +1,9 @@
 package com.muscledia.user_service.user.entity;
 
 import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import com.muscledia.user_service.avatar.entity.Avatar;
 import jakarta.persistence.*;
 import lombok.*;
@@ -20,9 +23,12 @@ import java.util.Set;
 @Setter
 public class User {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "user_id")
+    @JsonSerialize(using = ToStringSerializer.class) // This fixes the precision issue
     private Long userId;
+
+    @Column(name = "uuid_string", unique = true, nullable = false, length = 36)
+    private String uuidString; // Store the original UUID as string for reference
 
     @Column(name = "username", unique = true, nullable = false, length = 50)
     private String username;
@@ -31,6 +37,7 @@ public class User {
     private String email;
 
     @Column(name = "password_hash", nullable = false)
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY) // Hide password in responses
     private String passwordHash;
 
     @Column(name = "birth_date")
@@ -77,6 +84,28 @@ public class User {
 
     @Column(name = "updated_at", columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP")
     private LocalDateTime updatedAt;
+
+    @PrePersist
+    public void prePersist() {
+        if (this.createdAt == null) {
+            this.createdAt = LocalDateTime.now();
+        }
+        if (this.updatedAt == null) {
+            this.updatedAt = LocalDateTime.now();
+        }
+        // Initialize default values
+        if (this.currentStreak == null) {
+            this.currentStreak = 0;
+        }
+        if (this.totalExp == null) {
+            this.totalExp = 0L;
+        }
+    }
+
+    @PreUpdate
+    public void updateTimestamp() {
+        this.updatedAt = LocalDateTime.now();
+    }
 
     public void addRole(Role role) {
         this.roles.add(role);
