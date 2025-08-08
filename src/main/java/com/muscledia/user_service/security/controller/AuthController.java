@@ -19,6 +19,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 @RestController
 @RequestMapping("/api/users")
 @Tag(name = "Authentication", description = "Authentication management APIs")
@@ -47,11 +50,27 @@ public class AuthController {
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword()));
 
-        String token = jwtTokenProvider.createToken(request.getUsername());
+        // Retrieve the User object to get the userId
         User user = userService.getUserByUsername(request.getUsername())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        AuthenticationResponse response = new AuthenticationResponse(token, user.getUsername(), user.getUserId());
+        // Pass both userId and username to the createToken method
+        String token = jwtTokenProvider.createToken(user);
+
+        // Extract roles for the response
+        List<String> roles = user.getRoles().stream()
+                .map(role -> "ROLE_" + role.getName().name().replace("ROLE_", "")) // Ensure consistent format
+                .collect(Collectors.toList());
+
+        // Create enhanced response with roles
+        AuthenticationResponse response = new AuthenticationResponse(
+                token,
+                user.getUsername(),
+                user.getUserId(),
+                user.getUuidString(),
+                roles // Include user roles in response
+        );
+
         return ResponseEntity.ok().body(response);
     }
 }
