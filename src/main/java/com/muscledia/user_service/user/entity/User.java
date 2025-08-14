@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import com.muscledia.user_service.avatar.entity.Avatar;
+import com.muscledia.user_service.avatar.entity.AvatarType;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -55,6 +56,10 @@ public class User {
     @Enumerated(EnumType.STRING)
     @Column(name = "goal_type")
     private GoalType goalType;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "initial_avatar_type")
+    private AvatarType initialAvatarType;
 
     @JsonManagedReference
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
@@ -113,5 +118,9 @@ public class User {
 
     public void removeRole(Role role) {
         this.roles.remove(role);
+    }
+
+    public Object getInitialAvatarType() {
+        return initialAvatarType != null ? initialAvatarType.name() : null;
     }
 }
