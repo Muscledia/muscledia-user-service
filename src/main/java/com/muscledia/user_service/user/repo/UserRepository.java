@@ -30,12 +30,4 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     @Query("SELECT u.uuidString FROM User u WHERE u.userId = :userId")
     Optional<String> findUuidStringByUserId(@Param("userId") Long userId);
-
-    // Check if either the Long ID or UUID exists (useful for validation)
-    @Query("SELECT CASE WHEN COUNT(u) > 0 THEN true ELSE false END FROM User u WHERE u.userId = :userId OR u.uuidString = :uuidString")
-    boolean existsByUserIdOrUuidString(@Param("userId") Long userId, @Param("uuidString") String uuidString);
-
-    // Find user by either Long ID or UUID string (flexible search)
-    @Query("SELECT u FROM User u WHERE u.userId = :userId OR u.uuidString = :identifier")
-    Optional<User> findByUserIdOrUuidString(@Param("userId") Long userId, @Param("identifier") String identifier);
 }

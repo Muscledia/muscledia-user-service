@@ -20,7 +20,6 @@ import java.time.ZoneOffset;
 import java.util.*;
 
 @Service
-//@RequiredArgsConstructor
 @Slf4j
 public class UserServiceImpl implements IUserService {
     private final UserRepository userRepository;
@@ -49,9 +48,9 @@ public class UserServiceImpl implements IUserService {
     @PostConstruct
     public void checkEventPublisher() {
         if (eventPublisher != null) {
-            log.info("✅ UserEventPublisher is available - Kafka events enabled");
+            log.info("UserEventPublisher is available - Kafka events enabled");
         } else {
-            log.warn("❌ UserEventPublisher is NULL - Kafka events disabled");
+            log.warn("UserEventPublisher is NULL - Kafka events disabled");
         }
     }
 
@@ -60,45 +59,51 @@ public class UserServiceImpl implements IUserService {
     public User saveUser(User user) {
         boolean isNewUser = user.getUserId() == null;
 
-        // Handle new user creation
         if (isNewUser) {
-            log.info("Creating new user: {}", user.getUsername());
-
-            // Generate UUID-based ID for new users
-            UuidToLongIdGenerator.UuidLongPair idPair = uuidGenerator.generateUniqueId();
-            user.setUserId(idPair.getLongId());
-            user.setUuidString(idPair.getUuidString());
-
-            // Encode password for new users
-            user.setPasswordHash(passwordEncoder.encode(user.getPasswordHash()));
-
-            // Set creation timestamp (will be handled by @PrePersist)
-            // user.setCreatedAt() is handled automatically
-
-            // Assign default ROLE_USER to new users
-            roleService.addRoleToUser(user, ERole.ROLE_USER);
+            return createNewUser(user);
         } else {
-            // For existing users (updates)
-            if (user.getUuidString() == null) {
-                Optional<String> existingUuid = userRepository.findUuidStringByUserId(user.getUserId());
-                if (existingUuid.isPresent()) {
-                    user.setUuidString(existingUuid.get());
-                } else {
-                    throw new IllegalStateException("Existing user missing UUID: " + user.getUserId());
-                }
-            }
+            return updateExistingUser(user);
         }
+    }
 
-        // Save the user
+    // EXTRACTED METHOD - Same logic, just separated
+    private User createNewUser(User user) {
+        log.info("Creating new user: {}", user.getUsername());
+
+        // Generate UUID-based ID
+        UuidToLongIdGenerator.UuidLongPair idPair = uuidGenerator.generateUniqueId();
+        user.setUserId(idPair.getLongId());
+        user.setUuidString(idPair.getUuidString());
+
+        // Encode password
+        user.setPasswordHash(passwordEncoder.encode(user.getPasswordHash()));
+
+        // Assign default role
+        roleService.addRoleToUser(user, ERole.ROLE_USER);
+
+        // Save user
         User savedUser = userRepository.save(user);
         log.info("User saved successfully: {} (ID: {})", savedUser.getUsername(), savedUser.getUserId());
 
-        // Publish registration event for new users
-        if (isNewUser) {
-            publishUserRegistrationEvent(savedUser);
-        }
+        // Publish registration event
+        publishUserRegistrationEvent(savedUser);
 
         return savedUser;
+    }
+
+    // EXTRACTED METHOD - Same logic, just separated
+    private User updateExistingUser(User user) {
+        // Handle missing UUID for existing users
+        if (user.getUuidString() == null) {
+            Optional<String> existingUuid = userRepository.findUuidStringByUserId(user.getUserId());
+            if (existingUuid.isPresent()) {
+                user.setUuidString(existingUuid.get());
+            } else {
+                throw new IllegalStateException("Existing user missing UUID: " + user.getUserId());
+            }
+        }
+
+        return userRepository.save(user);
     }
 
     /**
@@ -108,7 +113,15 @@ public class UserServiceImpl implements IUserService {
     public User registerUser(User user) {
         log.info("Registering new user: {}", user.getUsername());
 
-        // Validate user doesn't already exist
+        // Validation - EXTRACTED to separate method
+        validateNewUser(user);
+
+        // Use the existing saveUser logic
+        return saveUser(user);
+    }
+
+    // EXTRACTED VALIDATION METHOD
+    private void validateNewUser(User user) {
         if (existsByUsername(user.getUsername())) {
             throw new IllegalArgumentException("Username already exists: " + user.getUsername());
         }
@@ -116,9 +129,6 @@ public class UserServiceImpl implements IUserService {
         if (existsByEmail(user.getEmail())) {
             throw new IllegalArgumentException("Email already exists: " + user.getEmail());
         }
-
-        // Save the user (this will trigger event publishing)
-        return saveUser(user);
     }
 
     /**
@@ -319,10 +329,6 @@ public class UserServiceImpl implements IUserService {
         return userRepository.findByUsername(username);
     }
 
-    @Override
-    public Optional<User> getUserByEmail(String email) {
-        return userRepository.findByEmail(email);
-    }
 
     @Transactional(readOnly = true)
     public Optional<User> getUserByUuid(String uuidString) {
