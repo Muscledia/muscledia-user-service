@@ -41,6 +41,53 @@ public class UserController {
                 this.userServiceImpl = userServiceImpl;
         }
 
+
+        // ============= EXTRACTED VALIDATION METHODS =============
+        // These replace the duplicated validation code in your methods
+
+        /**
+         * EXTRACTED: Check if username/email changes conflict with existing users
+         * Used in: updateOwnDetails, updateOwnDetailsByUuid, updateUser, updateUserByUuid
+         */
+        private void validateUniqueFieldChanges(User existingUser, RegistrationRequest updateRequest) {
+                if (!existingUser.getUsername().equals(updateRequest.getUsername())
+                        && userService.existsByUsername(updateRequest.getUsername())) {
+                        throw new UsernameAlreadyExistsException(
+                                "Username already exists: " + updateRequest.getUsername());
+                }
+
+                if (!existingUser.getEmail().equals(updateRequest.getEmail())
+                        && userService.existsByEmail(updateRequest.getEmail())) {
+                        throw new UsernameAlreadyExistsException(
+                                "Email already exists: " + updateRequest.getEmail());
+                }
+        }
+
+        /**
+         * EXTRACTED: Check if new user registration conflicts with existing users
+         * Used in: registerUser
+         */
+        private void validateNewUserUniqueness(RegistrationRequest registrationRequest) {
+                if (userService.existsByUsername(registrationRequest.getUsername())) {
+                        throw new UsernameAlreadyExistsException(
+                                "Username already exists: " + registrationRequest.getUsername());
+                }
+
+                if (userService.existsByEmail(registrationRequest.getEmail())) {
+                        throw new UsernameAlreadyExistsException(
+                                "Email already exists: " + registrationRequest.getEmail());
+                }
+        }
+
+        /**
+         * EXTRACTED: Handle UUID format errors consistently
+         * Used in: getUserByUuid, updateOwnDetailsByUuid, updateUserByUuid, deleteUserByUuid, convertUuidToId
+         */
+        private ResponseEntity<?> handleUuidError(IllegalArgumentException e, String uuid) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("error", "Invalid UUID format: " + uuid));
+        }
+
         @IsUser
         @Operation(summary = "Get user by ID", description = "Retrieves a user by their Long ID")
         @ApiResponses(value = {
@@ -72,8 +119,7 @@ public class UserController {
                         return ResponseEntity.ok(userServiceImpl.getUserByUuid(uuid)
                                 .orElseThrow(() -> new ResourceNotFoundException("User not found with UUID: " + uuid)));
                 } catch (IllegalArgumentException e) {
-                        return ResponseEntity.badRequest()
-                                .body(Map.of("error", "Invalid UUID format: " + uuid));
+                        return handleUuidError(e, uuid); // USING EXTRACTED METHOD
                 }
         }
 
@@ -90,23 +136,14 @@ public class UserController {
         public ResponseEntity<User> updateOwnDetails(
                 @AuthenticationPrincipal UserDetails userDetails,
                 @Valid @RequestBody RegistrationRequest updateRequest) {
+
                 User existingUser = userService.getUserByUsername(userDetails.getUsername())
                         .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-                if (!existingUser.getUsername().equals(updateRequest.getUsername())
-                        && userService.existsByUsername(updateRequest.getUsername())) {
-                        throw new UsernameAlreadyExistsException(
-                                "Username already exists: " + updateRequest.getUsername());
-                }
-
-                if (!existingUser.getEmail().equals(updateRequest.getEmail())
-                        && userService.existsByEmail(updateRequest.getEmail())) {
-                        throw new UsernameAlreadyExistsException(
-                                "Email already exists: " + updateRequest.getEmail());
-                }
+                // USING EXTRACTED VALIDATION METHOD
+                validateUniqueFieldChanges(existingUser, updateRequest);
 
                 mapping(updateRequest, existingUser);
-                // Use updateUser method to preserve UUID and ID
                 User updatedUser = userServiceImpl.updateUser(existingUser);
                 return ResponseEntity.ok(updatedUser);
         }
@@ -126,7 +163,6 @@ public class UserController {
                 @Parameter(description = "UUID string of your own profile") @PathVariable("uuid") String uuid,
                 @Valid @RequestBody RegistrationRequest updateRequest) {
                 try {
-                        // First, verify the UUID belongs to the authenticated user
                         User existingUser = userServiceImpl.getUserByUuid(uuid)
                                 .orElseThrow(() -> new ResourceNotFoundException("User not found with UUID: " + uuid));
 
@@ -136,25 +172,15 @@ public class UserController {
                                         .body(Map.of("error", "You can only update your own profile"));
                         }
 
-                        if (!existingUser.getUsername().equals(updateRequest.getUsername())
-                                && userService.existsByUsername(updateRequest.getUsername())) {
-                                throw new UsernameAlreadyExistsException(
-                                        "Username already exists: " + updateRequest.getUsername());
-                        }
-
-                        if (!existingUser.getEmail().equals(updateRequest.getEmail())
-                                && userService.existsByEmail(updateRequest.getEmail())) {
-                                throw new UsernameAlreadyExistsException(
-                                        "Email already exists: " + updateRequest.getEmail());
-                        }
+                        // USING EXTRACTED VALIDATION METHOD
+                        validateUniqueFieldChanges(existingUser, updateRequest);
 
                         mapping(updateRequest, existingUser);
                         User updatedUser = userServiceImpl.updateUser(existingUser);
                         return ResponseEntity.ok(updatedUser);
 
                 } catch (IllegalArgumentException e) {
-                        return ResponseEntity.badRequest()
-                                .body(Map.of("error", "Invalid UUID format: " + uuid));
+                        return handleUuidError(e, uuid); // USING EXTRACTED METHOD
                 }
         }
 
@@ -188,20 +214,12 @@ public class UserController {
         @PostMapping("/register")
         public ResponseEntity<?> registerUser(@Valid @RequestBody RegistrationRequest registrationRequest) {
                 try {
-                        if (userService.existsByUsername(registrationRequest.getUsername())) {
-                                throw new UsernameAlreadyExistsException(
-                                        "Username already exists: " + registrationRequest.getUsername());
-                        }
-
-                        if (userService.existsByEmail(registrationRequest.getEmail())) {
-                                throw new UsernameAlreadyExistsException(
-                                        "Email already exists: " + registrationRequest.getEmail());
-                        }
+                        // USING EXTRACTED VALIDATION METHOD
+                        validateNewUserUniqueness(registrationRequest);
 
                         User newUser = new User();
                         mapping(registrationRequest, newUser);
 
-                        // UserService will generate UUID-based ID automatically
                         User createdUser = userService.saveUser(newUser);
                         return ResponseEntity.status(HttpStatus.CREATED).body(createdUser);
 
@@ -210,10 +228,9 @@ public class UserController {
                                 return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
                                         .body(Map.of("error", "System capacity issue. Please try again later."));
                         }
-                        throw e; // Re-throw other runtime exceptions to be handled by global exception handler
+                        throw e;
                 }
         }
-
 
         @IsAdmin
         @Operation(summary = "Update user", description = "Updates an existing user's information")
@@ -227,23 +244,14 @@ public class UserController {
         public ResponseEntity<User> updateUser(
                 @Parameter(description = "Long ID of the user to update") @PathVariable("id") Long id,
                 @Valid @RequestBody RegistrationRequest updateRequest) {
+
                 User existingUser = userService.getUserById(id)
                         .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
 
-                if (!existingUser.getUsername().equals(updateRequest.getUsername())
-                        && userService.existsByUsername(updateRequest.getUsername())) {
-                        throw new UsernameAlreadyExistsException(
-                                "Username already exists: " + updateRequest.getUsername());
-                }
-
-                if (!existingUser.getEmail().equals(updateRequest.getEmail())
-                        && userService.existsByEmail(updateRequest.getEmail())) {
-                        throw new UsernameAlreadyExistsException(
-                                "Email already exists: " + updateRequest.getEmail());
-                }
+                // USING EXTRACTED VALIDATION METHOD
+                validateUniqueFieldChanges(existingUser, updateRequest);
 
                 mapping(updateRequest, existingUser);
-                // Use updateUser method to preserve UUID and ID
                 User updatedUser = userServiceImpl.updateUser(existingUser);
                 return ResponseEntity.ok(updatedUser);
         }
@@ -265,24 +273,14 @@ public class UserController {
                         User existingUser = userServiceImpl.getUserByUuid(uuid)
                                 .orElseThrow(() -> new ResourceNotFoundException("User not found with UUID: " + uuid));
 
-                        if (!existingUser.getUsername().equals(updateRequest.getUsername())
-                                && userService.existsByUsername(updateRequest.getUsername())) {
-                                throw new UsernameAlreadyExistsException(
-                                        "Username already exists: " + updateRequest.getUsername());
-                        }
-
-                        if (!existingUser.getEmail().equals(updateRequest.getEmail())
-                                && userService.existsByEmail(updateRequest.getEmail())) {
-                                throw new UsernameAlreadyExistsException(
-                                        "Email already exists: " + updateRequest.getEmail());
-                        }
+                        // USING EXTRACTED VALIDATION METHOD
+                        validateUniqueFieldChanges(existingUser, updateRequest);
 
                         mapping(updateRequest, existingUser);
                         User updatedUser = userServiceImpl.updateUser(existingUser);
                         return ResponseEntity.ok(updatedUser);
                 } catch (IllegalArgumentException e) {
-                        return ResponseEntity.badRequest()
-                                .body(Map.of("error", "Invalid UUID format: " + uuid));
+                        return handleUuidError(e, uuid); // USING EXTRACTED METHOD
                 }
         }
 
@@ -321,13 +319,12 @@ public class UserController {
                         userServiceImpl.deleteUserByUuid(uuid);
                         return ResponseEntity.noContent().build();
                 } catch (IllegalArgumentException e) {
-                        return ResponseEntity.badRequest()
-                                .body(Map.of("error", "Invalid UUID format: " + uuid));
+                        return handleUuidError(e, uuid); // USING EXTRACTED METHOD
                 }
         }
 
         @IsAdmin
-        @PreAuthorize("hasRole('ADMIN')") // Double security layer
+        @PreAuthorize("hasRole('ADMIN')")
         @Operation(summary = "Promote user to admin", description = "Grants ADMIN role to a user")
         @ApiResponses(value = {
                 @ApiResponse(responseCode = "200", description = "User successfully promoted to admin"),
@@ -336,8 +333,9 @@ public class UserController {
         })
         @PostMapping("/{id}/promote")
         public ResponseEntity<User> promoteToAdmin(
-                @Parameter(description = "Long ID of the user to promote") @PathVariable("id") Long id, Authentication authentication) {
-                // Additional security check: Prevent self-promotion
+                @Parameter(description = "Long ID of the user to promote") @PathVariable("id") Long id,
+                Authentication authentication) {
+
                 String currentUsername = authentication.getName();
                 User targetUser = userService.getUserById(id)
                         .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
@@ -352,7 +350,7 @@ public class UserController {
         }
 
         @IsAdmin
-        @PreAuthorize("hasRole('ADMIN')") // Double security layer
+        @PreAuthorize("hasRole('ADMIN')")
         @Operation(summary = "Demote user from admin", description = "Removes ADMIN role from a user")
         @ApiResponses(value = {
                 @ApiResponse(responseCode = "200", description = "User successfully demoted from admin"),
@@ -361,8 +359,9 @@ public class UserController {
         })
         @PostMapping("/{id}/demote")
         public ResponseEntity<User> demoteFromAdmin(
-                @Parameter(description = "Long ID of the user to demote") @PathVariable("id") Long id, Authentication authentication) {
-                // Additional security check: Prevent self-demotion
+                @Parameter(description = "Long ID of the user to demote") @PathVariable("id") Long id,
+                Authentication authentication) {
+
                 String currentUsername = authentication.getName();
                 User targetUser = userService.getUserById(id)
                         .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
@@ -375,8 +374,6 @@ public class UserController {
                 User demotedUser = userServiceImpl.demoteFromAdmin(id);
                 return ResponseEntity.ok(demotedUser);
         }
-
-        // UUID-specific utility endpoints
 
         @IsAdmin
         @Operation(summary = "Convert UUID to Long ID", description = "Utility endpoint for UUID to ID conversion")
@@ -399,8 +396,7 @@ public class UserController {
                 } catch (ResourceNotFoundException e) {
                         return ResponseEntity.notFound().build();
                 } catch (IllegalArgumentException e) {
-                        return ResponseEntity.badRequest()
-                                .body(Map.of("error", "Invalid UUID format: " + uuid));
+                        return handleUuidError(e, uuid); // USING EXTRACTED METHOD
                 }
         }
 
