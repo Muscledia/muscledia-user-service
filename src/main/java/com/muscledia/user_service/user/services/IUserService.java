@@ -10,8 +10,6 @@ public interface IUserService {
 
     Optional<User> getUserByUsername(String username);
 
-    Optional<User> getUserByEmail(String email);
-
     boolean existsByUsername(String username);
 
     boolean existsByEmail(String email);

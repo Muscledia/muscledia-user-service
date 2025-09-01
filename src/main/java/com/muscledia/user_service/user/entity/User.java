@@ -123,4 +123,91 @@ public class User {
     public Object getInitialAvatarType() {
         return initialAvatarType != null ? initialAvatarType.name() : null;
     }
+
+
+    /**
+     * STEP 1: Add simple validation to your existing setters
+     */
+    public void setUsername(String username) {
+        if (username == null || username.trim().isEmpty()) {
+            throw new IllegalArgumentException("Username cannot be empty");
+        }
+        if (username.length() < 3 || username.length() > 50) {
+            throw new IllegalArgumentException("Username must be 3-50 characters");
+        }
+        this.username = username.trim();
+    }
+
+    public void setEmail(String email) {
+        if (email == null || email.trim().isEmpty()) {
+            throw new IllegalArgumentException("Email cannot be empty");
+        }
+        if (!isValidEmail(email)) {
+            throw new IllegalArgumentException("Invalid email format");
+        }
+        this.email = email.toLowerCase().trim();
+    }
+
+    /**
+     * STEP 1: Simple email validation helper
+     */
+    private boolean isValidEmail(String email) {
+        return email.contains("@") && email.contains(".") && email.length() > 5;
+        // This is basic - you can improve it later
+    }
+
+    // ========== STEP 1: Add some simple business logic methods ==========
+
+    /**
+     * Business logic: Check if user has a specific role
+     */
+    public boolean hasRole(ERole roleName) {
+        return roles.stream()
+                .anyMatch(role -> role.getName() == roleName);
+    }
+
+    /**
+     * Business logic: Check if user is admin
+     */
+    public boolean isAdmin() {
+        return hasRole(ERole.ROLE_ADMIN);
+    }
+
+    /**
+     * Business logic: Award badge with validation
+     */
+    public void awardBadge(Long badgeId) {
+        // Check if user already has this badge
+        boolean alreadyHasBadge = userBadges.stream()
+                .anyMatch(badge -> badge.getBadgeId().equals(badgeId));
+
+        if (alreadyHasBadge) {
+            throw new IllegalArgumentException("User already has this badge");
+        }
+
+        // Create new user badge
+        UserBadge userBadge = new UserBadge();
+        userBadge.setUser(this);
+        userBadge.setBadgeId(badgeId);
+        userBadge.setEarnedDate(LocalDateTime.now());
+
+        userBadges.add(userBadge);
+    }
+
+    /**
+     * Business logic: Promote user with validation
+     */
+    public void promoteToAdmin() {
+        if (isAdmin()) {
+            throw new IllegalArgumentException("User is already admin");
+        }
+
+        // Find or create ADMIN role
+        Role adminRole = roles.stream()
+                .filter(role -> role.getName() == ERole.ROLE_ADMIN)
+                .findFirst()
+                .orElse(new Role(ERole.ROLE_ADMIN));
+
+        roles.add(adminRole);
+    }
 }
