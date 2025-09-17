@@ -60,6 +60,8 @@ eureka:
   client:
     service-url:
       defaultZone: http://localhost:8761/eureka # Point to Eureka Server
+  instance:
+    prefer-ip-address: true  # Essential for container networking
 
 # Add debug logging to see what's happening
 logging:
