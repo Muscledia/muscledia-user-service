@@ -1,5 +1,5 @@
 # Multi-stage build for optimized image size
-FROM maven:3.9.4-openjdk-21-slim AS build
+FROM maven:3.9.9-eclipse-temurin-21 AS build
 
 WORKDIR /app
 
