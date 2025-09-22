@@ -53,6 +53,7 @@ eureka:
     prefer-ip-address: true
     hostname: user-service
 
+
 jwt:
   secret: ${JWT_SECRET:81795ad725b2cadd49d27a60438415588db374020a561ae19cafebeef6339655304975b150867b21d3715e341a49271a75a7dde39776e156af0ddad50f5e6ec3}
   expiration: ${JWT_EXPIRATION:86400000}
@@ -70,12 +71,22 @@ management:
     web:
       exposure:
         include: health,info,metrics
+      base-path: /actuator
   endpoint:
     health:
       show-details: always
+  health:
+    defaults:
+      enabled: true
+    db:
+      enabled: true
+
 
 logging:
   level:
-    com.muscledia: INFO
-    org.springframework.kafka: INFO
+    com.muscledia: ${LOG_LEVEL_MUSCLEDIA:INFO}
+    org.springframework.kafka: ${LOG_LEVEL_KAFKA:WARN}
     org.apache.kafka: WARN
+    org.springframework.web: ${LOG_LEVEL_WEB:INFO}
+    org.springframework.security: ${LOG_LEVEL_SECURITY:INFO}
+    org.hibernate.SQL: ${LOG_LEVEL_SQL:WARN}
