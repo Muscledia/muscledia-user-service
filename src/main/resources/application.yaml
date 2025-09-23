@@ -3,11 +3,12 @@ server:
 
 spring:
   application:
-    name: user-service
+    name: muscledia-user-service
+
   datasource:
-    url: jdbc:mysql://localhost:3306/muscledia
-    username: springstudent
-    password: springstudent
+    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3306/muscledia}
+    username: ${SPRING_DATASOURCE_USERNAME:springstudent}
+    password: ${SPRING_DATASOURCE_PASSWORD:springstudent}
     driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
     hibernate:
@@ -16,6 +17,7 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.MySQLDialect
+        format_sql: true
 
     # Jackson Configuration to handle Long precision issues
   jackson:
@@ -58,6 +60,8 @@ eureka:
   client:
     service-url:
       defaultZone: http://localhost:8761/eureka # Point to Eureka Server
+  instance:
+    prefer-ip-address: true  # Essential for container networking
 
 # Add debug logging to see what's happening
 logging:

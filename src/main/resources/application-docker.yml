@@ -1,0 +1,92 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: muscledia-user-service
+
+  datasource:
+    url: jdbc:mysql://mysql:3306/muscledia
+    username: springstudent
+    password: springstudent
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
+
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    deserialization:
+      fail-on-unknown-properties: false
+
+  # Kafka Configuration for Event Publishing
+  kafka:
+    bootstrap-servers: ${KAFKA_SERVERS:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      acks: all
+      retries: 3
+      batch-size: 16384
+      linger-ms: 5
+      properties:
+        enable.idempotence: true
+    consumer:
+      group-id: ${KAFKA_GROUP_ID_USER:user-service-group}
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
+      properties:
+        spring.json.trusted.packages: "com.muscledia.*"
+        spring.json.use.type.headers: false
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://service-discovery:8761/eureka/
+  instance:
+    prefer-ip-address: true
+    hostname: user-service
+
+
+jwt:
+  secret: ${JWT_SECRET:81795ad725b2cadd49d27a60438415588db374020a561ae19cafebeef6339655304975b150867b21d3715e341a49271a75a7dde39776e156af0ddad50f5e6ec3}
+  expiration: ${JWT_EXPIRATION:86400000}
+  issuer: ${JWT_ISSUER:muscledia-user-service}
+
+# Event Configuration
+kafka:
+  topics:
+    user-events: ${KAFKA_TOPIC_USER_EVENTS:user-events}
+  events:
+    enabled: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: always
+  health:
+    defaults:
+      enabled: true
+    db:
+      enabled: true
+
+
+logging:
+  level:
+    com.muscledia: ${LOG_LEVEL_MUSCLEDIA:INFO}
+    org.springframework.kafka: ${LOG_LEVEL_KAFKA:WARN}
+    org.apache.kafka: WARN
+    org.springframework.web: ${LOG_LEVEL_WEB:INFO}
+    org.springframework.security: ${LOG_LEVEL_SECURITY:INFO}
+    org.hibernate.SQL: ${LOG_LEVEL_SQL:WARN}
