@@ -25,7 +25,7 @@ import java.util.Map;
  * Provides endpoints for calculating recommended calorie intake based on user profile and goals.
  */
 @RestController
-@RequestMapping("/api/users")
+@RequestMapping("/api/users/calorie-calculator")
 @Validated
 @Slf4j
 @Tag(name = "Calorie Calculator", description = "Daily calorie needs calculation based on user goals")
