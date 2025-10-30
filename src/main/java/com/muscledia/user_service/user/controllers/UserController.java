@@ -459,12 +459,6 @@ public class UserController {
                 existingUser.setGoalType(updateRequest.getGoalType());
 
                 // Don't modify userId or uuidString - these should remain constant
-                // Only handle avatar if specified
-                if (updateRequest.getInitialAvatarType() != null) {
-                        Avatar avatar = new Avatar();
-                        avatar.setAvatarType(updateRequest.getInitialAvatarType());
-                        avatar.setUser(existingUser);
-                        existingUser.setAvatar(avatar);
-                }
+                // REMOVED: Avatar creation - users create avatars separately through avatar endpoints
         }
 }
