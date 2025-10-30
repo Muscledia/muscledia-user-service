@@ -6,6 +6,7 @@ import com.muscledia.user_service.avatar.repo.AvatarRepository;
 import com.muscledia.user_service.user.entity.User;
 import com.muscledia.user_service.user.services.IUserService;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,10 +17,38 @@ import java.util.Optional;
 
 @Service
 @AllArgsConstructor
+@Slf4j
 public class AvatarServiceImpl implements IAvatarService {
 
     private final AvatarRepository avatarRepository;
     private final IUserService userService;
+
+    /**
+     * SIMPLE: Create a default avatar for new users
+     *
+     * Call this from UserController after user registration
+     */
+    @Transactional
+    public Avatar createDefaultAvatarForNewUser(Long userId) {
+        log.info("Creating default avatar for user: {}", userId);
+
+        // Business logic: New users get ELF avatar by default
+        // This can be easily changed or made configurable later
+        AvatarType defaultType = AvatarType.ELF;
+
+        return createAvatar(userId, defaultType);
+    }
+
+    /**
+     * FUTURE: Allow users to choose avatar type after registration
+     * This method can be called from a separate avatar selection endpoint
+     */
+    @Transactional
+    public Avatar createChosenAvatarForUser(Long userId, AvatarType chosenType) {
+        log.info("Creating chosen avatar {} for user: {}", chosenType, userId);
+
+        return createAvatar(userId, chosenType);
+    }
 
 
     @Override

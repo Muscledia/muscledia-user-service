@@ -37,5 +37,5 @@ public class RegistrationRequest {
 
     private GoalType goalType;
 
-    private AvatarType initialAvatarType;
+    // REMOVED: private AvatarType initialAvatarType;
 }

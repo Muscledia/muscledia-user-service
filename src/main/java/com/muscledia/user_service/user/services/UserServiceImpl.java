@@ -178,7 +178,6 @@ public class UserServiceImpl implements IUserService {
 
                 // Get goal type and avatar type as strings
                 String goalTypeStr = user.getGoalType() != null ? user.getGoalType().name() : null;
-                String avatarTypeStr = (String) user.getInitialAvatarType();
 
                 // Publish the event
                 eventPublisher.publishUserRegisteredEvent(
@@ -187,7 +186,7 @@ public class UserServiceImpl implements IUserService {
                         user.getEmail(),
                         registrationDate,
                         goalTypeStr,
-                        avatarTypeStr,
+                        null, // No avatar type during registration
                         userPreferences
                 );
 
@@ -294,13 +293,6 @@ public class UserServiceImpl implements IUserService {
             ));
         }
 
-        // Track avatar type changes
-        if (!Objects.equals(existingUser.getInitialAvatarType(), updatedUser.getInitialAvatarType())) {
-            changes.put("avatarType", Map.of(
-                    "old", existingUser.getInitialAvatarType() != null ? existingUser.getInitialAvatarType() : "",
-                    "new", updatedUser.getInitialAvatarType() != null ? updatedUser.getInitialAvatarType() : ""
-            ));
-        }
 
         return changes;
     }
