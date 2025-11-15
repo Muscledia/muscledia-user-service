@@ -2,6 +2,7 @@ package com.muscledia.user_service.user.services;
 
 import com.muscledia.user_service.event.Publisher.UserEventPublisher;
 import com.muscledia.user_service.exception.ResourceNotFoundException;
+import com.muscledia.user_service.user.dto.UserDataDTO;
 import com.muscledia.user_service.user.entity.ERole;
 import com.muscledia.user_service.user.entity.User;
 import com.muscledia.user_service.user.repo.UserRepository;
@@ -307,9 +308,50 @@ public class UserServiceImpl implements IUserService {
         return localDateTime.toInstant(ZoneOffset.UTC);
     }
 
-    // ===========================================
-    // KEEP ALL YOUR EXISTING METHODS UNCHANGED
-    // ===========================================
+
+    @Override
+    @Transactional(readOnly = true)
+    public UserDataDTO getUserData(Long userId) {
+        log.info("Fetching user data for userId: {}", userId);
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+
+        return UserDataDTO.builder()
+                .userId(user.getUserId())
+                .height(user.getHeight())
+                .weight(user.getInitialWeight())
+                .goalType(user.getGoalType() != null ? user.getGoalType().name() : null)
+                .gender(user.getGender())
+                .age(calculateAge(user.getBirthDate()))
+                .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public UserDataDTO getUserDataByUsername(String username) {
+        log.info("Fetching user data for username: {}", username);
+
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with username: " + username));
+
+        return UserDataDTO.builder()
+                .userId(user.getUserId())
+                .height(user.getHeight())
+                .weight(user.getInitialWeight())
+                .goalType(user.getGoalType() != null ? user.getGoalType().name() : null)
+                .gender(user.getGender())
+                .age(calculateAge(user.getBirthDate()))
+                .build();
+    }
+
+    private Integer calculateAge(java.time.LocalDate birthDate) {
+        if (birthDate == null) {
+            return null;
+        }
+        return java.time.Period.between(birthDate, java.time.LocalDate.now()).getYears();
+    }
+
 
     @Override
     public Optional<User> getUserById(Long userId) {
