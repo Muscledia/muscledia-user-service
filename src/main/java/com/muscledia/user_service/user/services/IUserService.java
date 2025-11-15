@@ -1,5 +1,6 @@
 package com.muscledia.user_service.user.services;
 
+import com.muscledia.user_service.user.dto.UserDataDTO;
 import com.muscledia.user_service.user.entity.User;
 
 import java.util.List;
@@ -37,4 +38,8 @@ public interface IUserService {
 
     // Statistics
     UserServiceImpl.UserStatistics getSystemStatistics();
+
+    UserDataDTO getUserData(Long userId);
+
+    UserDataDTO getUserDataByUsername(String username);
 }
