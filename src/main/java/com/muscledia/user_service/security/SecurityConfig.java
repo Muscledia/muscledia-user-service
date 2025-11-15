@@ -54,6 +54,7 @@ public class SecurityConfig {
 
                         // PROTECTED USER ENDPOINTS
                         .requestMatchers("/api/users/**").authenticated()
+                        .requestMatchers("/api/users/me/data").authenticated()
                         .requestMatchers("/api/avatars/**").authenticated()
                         .requestMatchers("/api/user-champions/**").authenticated()
                         .requestMatchers("/api/notifications/**").authenticated()
