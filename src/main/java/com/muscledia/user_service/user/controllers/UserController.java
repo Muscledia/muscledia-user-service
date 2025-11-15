@@ -2,6 +2,7 @@ package com.muscledia.user_service.user.controllers;
 
 import com.muscledia.user_service.avatar.entity.Avatar;
 import com.muscledia.user_service.user.dto.RegistrationRequest;
+import com.muscledia.user_service.user.dto.UserDataDTO;
 import com.muscledia.user_service.user.entity.User;
 import com.muscledia.user_service.exception.ResourceNotFoundException;
 import com.muscledia.user_service.exception.UsernameAlreadyExistsException;
@@ -444,6 +445,18 @@ public class UserController {
                         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                                 .body(Map.of("error", "Failed to retrieve users"));
                 }
+        }
+
+        @GetMapping("/me/data")
+        @Operation(summary = "Get current user's data", description = "Retrieves the authenticated user's data for AI recommendations")
+        @ApiResponses(value = {
+                @ApiResponse(responseCode = "200", description = "User data retrieved successfully"),
+                @ApiResponse(responseCode = "401", description = "Unauthorized"),
+                @ApiResponse(responseCode = "404", description = "User not found")
+        })
+        public ResponseEntity<UserDataDTO> getCurrentUserData(@AuthenticationPrincipal UserDetails userDetails) {
+                UserDataDTO userData = userService.getUserDataByUsername(userDetails.getUsername());
+                return ResponseEntity.ok(userData);
         }
 
 
