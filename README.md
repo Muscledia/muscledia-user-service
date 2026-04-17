@@ -1,29 +1,70 @@
-# Muscledia User Service
+# Muscledia - User Service
 
-A comprehensive user management microservice for the Muscledia fitness platform, providing user authentication, profile management, badge system, champion battles, avatar management, and notifications.
-
-## Technology Stack
-
-- **Framework**: Spring Boot 3.4.5
-- **Security**: JWT Authentication with Spring Security
-- **Database**: MySQL with JPA/Hibernate
-- **Documentation**: Swagger/OpenAPI 3
-- **Build Tool**: Maven
-
-## API Documentation
-
-### Base URL: `http://localhost:8081`
+Core authentication and user management microservice for the Muscledia platform. Handles user registration, JWT-based authentication, profile management, avatar progression, badge tracking, champion battles, and notifications.
 
 ---
 
-## 🔐 Authentication Controller
+## Tech Stack
 
-### POST `/api/users/login`
+| Layer | Technology |
+|---|---|
+| Language | Java 21 |
+| Framework | Spring Boot 3.4.5 |
+| Security | Spring Security with JWT |
+| Database | MySQL 8.0 with JPA / Hibernate |
+| Build | Maven |
+| Docs | OpenAPI / Swagger UI |
 
-**Description**: Authenticate user and get JWT token  
-**Security**: Public  
-**Request Body**: `AuthenticationRequest`
+---
 
+## Architecture
+
+This service is the authentication authority for the Muscledia ecosystem. It issues JWT tokens that all other services validate locally — no token round-trips at runtime.
+
+**Responsibilities:**
+- User registration and authentication — issues JWT tokens on login
+- Profile management — user details, goals, weight tracking
+- Avatar system — RPG-style avatars with level, experience, and unlockable abilities
+- Badge tracking — award and progress tracking for achievement badges
+- Champion battles — track user progress against muscle champion bosses
+- Notifications — in-app notification delivery and read state management
+
+**Kafka Events Published:**
+- `UserRegisteredEvent` — consumed by the Gamification Service to initialise a user's XP profile on account creation
+
+---
+
+## Authentication
+
+Login returns a JWT Bearer token. Include it in all protected requests:
+
+```
+Authorization: Bearer <your-jwt-token>
+```
+
+**Access levels:**
+- Public — no token required
+- Authenticated — valid JWT required
+- Admin — valid JWT with `ADMIN` role required
+
+---
+
+## API Reference
+
+**Base URL:** `http://localhost:8081`
+**Swagger UI:** `http://localhost:8081/swagger-ui.html`
+**Health check:** `http://localhost:8081/actuator/health`
+
+---
+
+### Authentication — `/api/users`
+
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| POST | `/login` | Public | Authenticate and receive JWT token |
+| POST | `/register` | Public | Register a new user account |
+
+**Login request:**
 ```json
 {
   "username": "string",
@@ -31,32 +72,7 @@ A comprehensive user management microservice for the Muscledia fitness platform,
 }
 ```
 
-**Response**: `AuthenticationResponse`
-
-- **200**: Successfully authenticated
-- **401**: Invalid credentials
-- **400**: Invalid request
-
----
-
-## 👤 User Controller
-
-### GET `/api/users/{id}`
-
-**Description**: Get user by ID  
-**Security**: USER/ADMIN role required  
-**Response**: `User`
-
-- **200**: User found
-- **404**: User not found
-- **403**: Forbidden
-
-### POST `/api/users/register`
-
-**Description**: Register new user  
-**Security**: Public  
-**Request Body**: `RegistrationRequest`
-
+**Registration request:**
 ```json
 {
   "username": "string",
@@ -71,150 +87,44 @@ A comprehensive user management microservice for the Muscledia fitness platform,
 }
 ```
 
-**Response**: `User`
+---
 
-- **201**: User successfully created
-- **400**: Invalid input
-- **409**: Username or email already exists
+### User Management — `/api/users`
 
-### PUT `/api/users/me`
-
-**Description**: Update own user details  
-**Security**: USER/ADMIN role required  
-**Request Body**: `RegistrationRequest`  
-**Response**: `User`
-
-- **200**: User details successfully updated
-- **400**: Invalid input
-- **403**: Forbidden
-- **404**: User not found
-- **409**: Username or email already exists
-
-### PUT `/api/users/{id}`
-
-**Description**: Update user (Admin only)  
-**Security**: ADMIN role required  
-**Request Body**: `RegistrationRequest`  
-**Response**: `User`
-
-- **200**: User successfully updated
-- **404**: User not found
-- **409**: Username or email already exists
-- **403**: Forbidden
-
-### DELETE `/api/users/{id}`
-
-**Description**: Delete user  
-**Security**: ADMIN role required  
-**Response**: `Void`
-
-- **204**: User successfully deleted
-- **404**: User not found
-- **403**: Forbidden
-
-### POST `/api/users/{id}/promote`
-
-**Description**: Promote user to admin  
-**Security**: ADMIN role required  
-**Response**: `User`
-
-- **200**: User successfully promoted to admin
-- **404**: User not found
-- **403**: Forbidden
-
-### POST `/api/users/{id}/demote`
-
-**Description**: Demote user from admin  
-**Security**: ADMIN role required  
-**Response**: `User`
-
-- **200**: User successfully demoted from admin
-- **404**: User not found
-- **403**: Forbidden
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| GET | `/{id}` | Authenticated | Get user by ID |
+| PUT | `/me` | Authenticated | Update own profile |
+| PUT | `/{id}` | Admin | Update any user |
+| DELETE | `/{id}` | Admin | Delete user |
+| POST | `/{id}/promote` | Admin | Promote user to admin |
+| POST | `/{id}/demote` | Admin | Demote user from admin |
 
 ---
 
-## 🏆 User Badge Controller
+### Badges — `/api/users/{userId}/badges`
 
-### GET `/api/users/{userId}/badges`
-
-**Description**: Get all badges for a user  
-**Security**: USER/ADMIN role required  
-**Response**: `List<UserBadge>`
-
-- **200**: Badges retrieved successfully
-- **404**: User not found
-- **403**: Forbidden
-
-### GET `/api/users/{userId}/badges/{badgeId}`
-
-**Description**: Get specific badge for a user  
-**Security**: USER/ADMIN role required  
-**Response**: `UserBadge`
-
-- **200**: Badge found
-- **404**: Badge not found
-- **403**: Forbidden
-
-### POST `/api/users/{userId}/badges/{badgeId}`
-
-**Description**: Award badge to user  
-**Security**: ADMIN role required  
-**Response**: `Void`
-
-- **201**: Badge awarded successfully
-- **404**: User not found
-- **409**: Badge already awarded
-- **403**: Forbidden
-
-### PATCH `/api/users/{userId}/badges/{badgeId}/progress`
-
-**Description**: Update badge progress  
-**Security**: ADMIN role required  
-**Query Param**: `progress` (int)  
-**Response**: `Void`
-
-- **204**: Progress updated successfully
-- **404**: Badge not found
-- **403**: Forbidden
-
-### POST `/api/users/{userId}/badges`
-
-**Description**: Create or update user badge  
-**Security**: ADMIN role required  
-**Request Body**: `UserBadge`  
-**Response**: `UserBadge`
-
-- **201**: Badge saved successfully
-- **403**: Forbidden
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| GET | `/` | Authenticated | Get all badges for user |
+| GET | `/{badgeId}` | Authenticated | Get specific badge |
+| POST | `/{badgeId}` | Admin | Award badge to user |
+| PATCH | `/{badgeId}/progress` | Admin | Update badge progress |
+| POST | `/` | Admin | Create or update user badge |
 
 ---
 
-## ⚔️ User Champion Controller
+### Champion Battles — `/api/user-champions`
 
-### GET `/api/user-champions/users/{userId}`
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| GET | `/users/{userId}` | Authenticated | Get all champions for user |
+| GET | `/users/{userId}/{championId}` | Authenticated | Get specific champion progress |
+| POST | `/start` | Authenticated | Start a champion battle |
+| PATCH | `/progress` | Authenticated | Update exercise count toward battle |
+| PATCH | `/defeat` | Authenticated | Mark champion as defeated |
 
-**Description**: Get all champions for a user  
-**Security**: Authenticated  
-**Response**: `List<UserChampion>`
-
-- **200**: Champions retrieved successfully
-
-### GET `/api/user-champions/users/{userId}/{championId}`
-
-**Description**: Get specific champion for a user  
-**Security**: Authenticated  
-**Response**: `UserChampion`
-
-- **200**: Champion found
-- **404**: Champion not found for user
-
-### POST `/api/user-champions/start`
-
-**Description**: Start champion battle  
-**Security**: Authenticated  
-**Request Body**: `StartBattleRequest`
-
+**Start battle request:**
 ```json
 {
   "userId": 1,
@@ -222,339 +132,108 @@ A comprehensive user management microservice for the Muscledia fitness platform,
 }
 ```
 
-**Response**: `UserChampion`
+---
 
-- **201**: Battle started successfully
-- **400**: Invalid request
+### Avatars — `/api/users/{userId}/avatars` and `/api/avatars`
 
-### PATCH `/api/user-champions/progress`
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| POST | `/api/users/{userId}/avatars` | Authenticated | Create avatar for user |
+| GET | `/api/users/{userId}/avatar` | Authenticated | Get user's primary avatar |
+| GET | `/api/users/{userId}/avatars` | Authenticated | Get all avatars for user |
+| GET | `/api/avatars/{avatarId}` | Authenticated | Get avatar by ID |
+| PATCH | `/api/avatars/{avatarId}/level` | Authenticated | Update avatar level |
+| PATCH | `/api/avatars/{avatarId}/exp` | Authenticated | Update avatar experience |
+| PATCH | `/api/avatars/{avatarId}/ability` | Authenticated | Unlock avatar ability |
+| PATCH | `/api/avatars/{avatarId}/flame` | Authenticated | Set flame animation |
+| DELETE | `/api/avatars/{avatarId}` | Authenticated | Delete avatar |
 
-**Description**: Update exercise count for champion battle  
-**Security**: Authenticated  
-**Request Body**: `UpdateExerciseCountRequest`
-
-```json
-{
-  "userId": 1,
-  "championId": 1,
-  "count": 10
-}
-```
-
-**Response**: `Void`
-
-- **204**: Exercise count updated successfully
-- **400**: Invalid request
-
-### PATCH `/api/user-champions/defeat`
-
-**Description**: Mark champion as defeated  
-**Security**: Authenticated  
-**Request Body**: `DefeatChampionRequest`
-
-```json
-{
-  "userId": 1,
-  "championId": 1
-}
-```
-
-**Response**: `Void`
-
-- **204**: Champion marked as defeated successfully
-- **400**: Invalid request
+**Available avatar types:** `OGRE` · `DWARF` · `MINOTAUR` · `WEREWOLF` · `ELF` · `VAMPIRE`
 
 ---
 
-## 🎭 Avatar Controller
+### Notifications — `/api/users/{userId}/notifications` and `/api/notifications`
 
-### POST `/api/users/{userId}/avatars`
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| GET | `/api/users/{userId}/notifications` | Authenticated | Get all notifications |
+| GET | `/api/users/{userId}/notifications/unread` | Authenticated | Get unread notifications |
+| GET | `/api/users/{userId}/notifications/unread/count` | Authenticated | Get unread count |
+| POST | `/api/users/{userId}/notifications` | Authenticated | Create notification |
+| PATCH | `/api/users/{userId}/notifications/read-all` | Authenticated | Mark all as read |
+| GET | `/api/notifications/{notificationId}` | Authenticated | Get notification by ID |
+| PATCH | `/api/notifications/{notificationId}/read` | Authenticated | Mark notification as read |
+| DELETE | `/api/notifications/{notificationId}` | Authenticated | Delete notification |
 
-**Description**: Create avatar for user  
-**Security**: Authenticated  
-**Query Param**: `avatarType` (AvatarType enum)  
-**Available Types**: `OGRE`, `DWARF`, `MINOTAUR`, `WEREWOLF`, `ELF`, `VAMPIRE`  
-**Response**: `Avatar`
-
-- **201**: Avatar created successfully
-- **400**: Invalid avatar type
-- **404**: User not found
-
-### GET `/api/users/{userId}/avatar`
-
-**Description**: Get user's primary avatar  
-**Security**: Authenticated  
-**Response**: `Avatar`
-
-- **200**: Avatar found
-- **404**: No avatar found for user
-
-### GET `/api/users/{userId}/avatars`
-
-**Description**: Get all avatars for user  
-**Security**: Authenticated  
-**Response**: `List<Avatar>`
-
-- **200**: Avatars retrieved successfully
-
-### GET `/api/avatars/{avatarId}`
-
-**Description**: Get avatar by ID  
-**Security**: Authenticated  
-**Response**: `Avatar`
-
-- **200**: Avatar found
-- **404**: Avatar not found
-
-### PATCH `/api/avatars/{avatarId}/level`
-
-**Description**: Update avatar level  
-**Security**: Authenticated  
-**Request Body**: `UpdateAvatarLevelRequest`
-
-```json
-{
-  "newLevel": 5
-}
-```
-
-**Response**: `Avatar`
-
-- **200**: Avatar level updated successfully
-
-### PATCH `/api/avatars/{avatarId}/exp`
-
-**Description**: Update avatar experience  
-**Security**: Authenticated  
-**Request Body**: `UpdateAvatarExpRequest`
-
-```json
-{
-  "newExp": 1500
-}
-```
-
-**Response**: `Avatar`
-
-- **200**: Avatar experience updated successfully
-
-### PATCH `/api/avatars/{avatarId}/ability`
-
-**Description**: Unlock avatar ability  
-**Security**: Authenticated  
-**Request Body**: `UnlockAbilityRequest`
-
-```json
-{
-  "abilityKey": "strength_boost",
-  "abilityValue": true
-}
-```
-
-**Response**: `Avatar`
-
-- **200**: Ability unlocked successfully
-
-### PATCH `/api/avatars/{avatarId}/flame`
-
-**Description**: Set flame animation  
-**Security**: Authenticated  
-**Request Body**: `SetFlameAnimationRequest`
-
-```json
-{
-  "enabled": true
-}
-```
-
-**Response**: `Avatar`
-
-- **200**: Flame animation updated successfully
-
-### DELETE `/api/avatars/{avatarId}`
-
-**Description**: Delete avatar  
-**Security**: Authenticated  
-**Response**: `Void`
-
-- **204**: Avatar deleted successfully
+**Notification types:** `BADGE` · `QUEST` · `CHAMPION` · `FRIEND`
 
 ---
 
-## 🔔 Notification Controller
+## Domain Enums
 
-### GET `/api/users/{userId}/notifications`
-
-**Description**: Get all notifications for user  
-**Security**: Authenticated  
-**Response**: `List<Notification>`
-
-- **200**: Notifications retrieved successfully
-
-### GET `/api/notifications/{notificationId}`
-
-**Description**: Get notification by ID  
-**Security**: Authenticated  
-**Response**: `Notification`
-
-- **200**: Notification found
-- **404**: Notification not found
-
-### GET `/api/users/{userId}/notifications/unread`
-
-**Description**: Get unread notifications for user  
-**Security**: Authenticated  
-**Response**: `List<Notification>`
-
-- **200**: Unread notifications retrieved successfully
-
-### GET `/api/users/{userId}/notifications/unread/count`
-
-**Description**: Get count of unread notifications  
-**Security**: Authenticated  
-**Response**: `Long`
-
-- **200**: Count retrieved successfully
-
-### PATCH `/api/notifications/{notificationId}/read`
-
-**Description**: Mark notification as read  
-**Security**: Authenticated  
-**Response**: `Notification`
-
-- **200**: Notification marked as read
-- **404**: Notification not found
-
-### PATCH `/api/users/{userId}/notifications/read-all`
-
-**Description**: Mark all notifications as read  
-**Security**: Authenticated  
-**Response**: `Void`
-
-- **204**: All notifications marked as read
-
-### POST `/api/users/{userId}/notifications`
-
-**Description**: Create notification  
-**Security**: Authenticated  
-**Query Params**:
-
-- `type`: NotificationType (`BADGE`, `QUEST`, `CHAMPION`, `FRIEND`)
-- `message`: String  
-  **Response**: `Notification`
-- **201**: Notification created successfully
-- **400**: Invalid input
-
-### DELETE `/api/notifications/{notificationId}`
-
-**Description**: Delete notification  
-**Security**: Authenticated  
-**Response**: `Void`
-
-- **204**: Notification deleted successfully
-- **404**: Notification not found
+| Enum | Values |
+|---|---|
+| GoalType | `LOSE_WEIGHT` · `BUILD_STRENGTH` · `GAIN_MUSCLE` |
+| AvatarType | `OGRE` · `DWARF` · `MINOTAUR` · `WEREWOLF` · `ELF` · `VAMPIRE` |
+| NotificationType | `BADGE` · `QUEST` · `CHAMPION` · `FRIEND` |
 
 ---
 
-## 🔧 Available Enums
-
-### GoalType
-
-- `LOSE_WEIGHT`
-- `BUILD_STRENGTH`
-- `GAIN_MUSCLE`
-
-### AvatarType
-
-- `OGRE`
-- `DWARF`
-- `MINOTAUR`
-- `WEREWOLF`
-- `ELF`
-- `VAMPIRE`
-
-### NotificationType
-
-- `BADGE`
-- `QUEST`
-- `CHAMPION`
-- `FRIEND`
-
----
-
-## 🚀 Getting Started
-
-1. **Prerequisites**
-
-   - Java 21
-   - Maven 3.6+
-   - MySQL 8.0+
-
-2. **Installation**
-
-   ```bash
-   git clone <repository-url>
-   cd muscledia-user-service
-   mvn clean install
-   ```
-
-3. **Configuration**
-
-   - Update `application.yaml` with your database credentials
-   - Configure JWT secret key
-
-4. **Run Application**
-
-   ```bash
-   mvn spring-boot:run
-   ```
-
-5. **Access Swagger UI**
-   - URL: `http://localhost:8080/swagger-ui.html`
-
----
-
-## 🔐 Authentication
-
-Most endpoints require JWT authentication. Include the token in the Authorization header:
-
-```
-Authorization: Bearer <your-jwt-token>
-```
-
-To get a token, use the `/api/users/login` endpoint with valid credentials.
-
----
-
-## 📝 Response Format
-
-### Success Response
-
-Standard HTTP status codes with JSON response body.
-
-### Error Response
+## Error Response Format
 
 ```json
 {
   "timestamp": "2024-03-21T10:15:30.123",
-  "message": "Error description",
   "status": 404,
-  "error": "Not Found"
+  "error": "Not Found",
+  "message": "User not found"
 }
 ```
 
 ---
 
-## 🤝 Contributing
+## Running Locally
 
-1. Fork the repository
-2. Create a feature branch
-3. Commit your changes
-4. Push to the branch
-5. Create a Pull Request
+**Prerequisites:** Java 21, Maven 3.6+, MySQL 8.0+
+
+```bash
+# Create the database
+mysql -u root -p -e "CREATE DATABASE muscledia;"
+```
+
+**application.yml configuration:**
+
+```yaml
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/muscledia
+    username: <your-username>
+    password: <your-password>
+  jpa:
+    hibernate:
+      ddl-auto: update
+
+jwt:
+  secret: <your-secret-key>
+  issuer: muscledia-user-service
+  expiration: 86400000
+```
+
+```bash
+# Build and run
+mvn clean install
+mvn spring-boot:run
+```
+
+**Endpoints after startup:**
+- API: `http://localhost:8081`
+- Swagger UI: `http://localhost:8081/swagger-ui.html`
+- Health check: `http://localhost:8081/actuator/health`
 
 ---
 
-## 📄 License
+## Known Limitations
 
-This project is licensed under the MIT License.
+- Password reset flow not yet implemented
+- Notification delivery is in-app only — email and push notification channels are planned
+- Avatar ability system currently stores key-value pairs — a typed ability schema is planned for a future iteration
